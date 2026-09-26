@@ -1,0 +1,108 @@
+services:
+  briefkasten:
+    build: .
+    container_name: briefkasten
+    # ★ Bewusst KEIN Neustart von selbst (war `unless-stopped`, bis 2026-09-05).
+    # /app/data liegt in einem gocryptfs-Tresor, der nach einem Neustart des
+    # Wirts zu ist. Ein selbsttaetig anlaufender Container faende dort ein
+    # leeres Verzeichnis vor, legte sich eine frische Datenbank an und schriebe
+    # neue Briefe im Klartext auf die Platte, ohne Fehlermeldung.
+    # Start ausschliesslich ueber tresor/start.sh, das den Tresor prueft.
+    # Damit ist der Dienst `expected_state: manual`, gleiches Muster wie
+    # Jellyfin auf node1. Das ist kein Drift, sondern die Bedingung.
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+    ports:
+      - "127.0.0.1:8101:8000"
+    volumes:
+      # Datenbank, Volltext-Index, Vektoren und Scans liegen im gocryptfs-Tresor
+      # (tresor/README.md). Verschluesselt ist damit alles auf einmal: eine
+      # einzelne Spalte zu verschluesseln waere wirkungslos gewesen, weil der
+      # FTS5-Index dieselben Woerter im selben SQLite-File haelt.
+      #
+      # ★★ Der Pfad zeigt bewusst auf das Unterverzeichnis `daten` IM Tresor,
+      # nicht auf den Mountpunkt selbst, und `create_host_path` steht auf false.
+      # Damit ist der Schutz strukturell statt nur eine Verabredung: bei
+      # geschlossenem Tresor gibt es `mount/daten` nicht, und Docker verweigert
+      # den Start mit einer klaren Meldung. Zeigte der Mount auf `mount/`, waere
+      # das bei geschlossenem Tresor ein leeres, aber existierendes Verzeichnis,
+      # und der Dienst liefe an, legte eine frische Datenbank an und schriebe
+      # neue Briefe im Klartext auf die Platte. Nichts daran saehe nach Fehler
+      # aus, und der Schutz haenge daran, dass jemand tresor/start.sh benutzt.
+      - type: bind
+        # ★ `$HOME` statt eines festen Pfades: auf dem Wirt, auf dem dieses
+        # Projekt entstanden ist, ergibt das denselben Ort wie zuvor, in einer
+        # fremden Installation den richtigen. Ein eingebackenes
+        # /home/<name>/... haette einem Selbsthoster eine Fehlermeldung ueber
+        # ein Verzeichnis gezeigt, das es bei ihm nie geben sollte.
+        source: ${POSTFACH_DATEN:-${HOME}/postfach-tresor/mount/daten}
+        target: /app/data
+        bind:
+          create_host_path: false
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite:////app/data/app.db
+      - EMBEDDING_URL=http://embedding-service:8000
+      - KALENDER_BASE_URL=http://kalender:8085
+      - KALENDER_FEED_TOKEN=${KALENDER_FEED_TOKEN:-}
+      - STT_URL=http://ai-stt:5003
+      - VISION_SCAN_TIMEOUT=30
+      # ★ LLM_BASE_URL und VISION_SCAN_URL stehen hier NICHT mehr. Sie trugen
+      # bis 2026-09-06 die Adressen zweier Rechner dieses Hauses, und ein
+      # `environment:`-Eintrag haette jeden Wert aus der .env ueberschrieben:
+      # wer die Suite anderswo aufsetzt, haette den Wert gesetzt und trotzdem
+      # den fremden bekommen. Beide kommen jetzt ueber die .env (env_file
+      # oben), leer heisst „Funktion aus":
+      #   LLM_BASE_URL      Analyse eines Briefes durch ein Sprachmodell
+      #   VISION_SCAN_URL   Foto entzerren und zu PDF wandeln, sonst wird das
+      #                     Original abgelegt
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "1.0"
+    # ★ `kalender-net` ist am 2026-09-06 entfallen. Es war ein Alias auf das
+    # Default-Netz des kalender-Projekts und existierte nur, damit
+    # `http://kalender:8085` aufloest. Gemessen: der Name zeigt auf 10.210.3.x,
+    # also auf cc-apps, in dem beide Dienste ohnehin haengen. Der Alias wurde
+    # schon vorher nicht benutzt, kostete aber ein `external: true`-Netz, das
+    # ein Fremder nicht anlegen kann, weil es aus einem fremden Compose-Projekt
+    # stammt. (Es hiess hier ausserdem `kalender-net` und in mealprep
+    # `kalender_net`: derselbe Ort in zwei Schreibweisen.)
+    networks:
+      - default
+      - cc-proxy
+      - cc-core
+      - cc-apps
+
+volumes:
+  # Nicht mehr eingehaengt, seit /app/data im Tresor liegt. Der Eintrag bleibt
+  # stehen, solange das Volume als Rueckweg existiert: entfernt man ihn zuerst,
+  # sammelt `docker volume prune` es bei naechster Gelegenheit ein.
+  # ⚠️ Solange es existiert, liegt der Bestand doppelt vor, einmal davon im
+  # Klartext. Loeschen ist ein bewusster eigener Schritt, siehe tresor/umziehen.sh.
+  briefkasten-data:
+
+# ★ Lokal definiert statt `external: true`, damit dieses Compose ueberall laeuft
+# und nicht nur auf dem einen Wirt, der die Bruecken vorher angelegt hat. Die
+# Homelab-Sicht steht in `docker-compose.homelab.yml` und wird ueber COMPOSE_FILE
+# in der .env mitgeladen.
+networks:
+  cc-proxy:
+  cc-core:
+  cc-apps:
