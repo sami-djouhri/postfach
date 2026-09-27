@@ -1,26 +1,70 @@
-@import './theme.css';
+/* postfach: die Registratur.
+ *
+ * Vorher: Tailwind-Slate als Grund, Indigo als Akzent, darueber
+ * `theme.css` mit seinem Terrakotta. Die beiden vertrugen sich nicht.
+ * Auf der Anmeldeseite stand der Titel "Briefkasten" in Terrakotta auf
+ * dunklem Blaugrau und war praktisch nicht zu lesen: die Vorlage war fuer
+ * einen cremefarbenen Grund gezeichnet, die App rendert dunkelblau, und
+ * niemand hatte die beiden je nebeneinander gesehen. Dazu brachte die
+ * Vorlage einen Abruf bei fonts.googleapis.com mit. Beides ist weg.
+ *
+ * Was der Dienst ist: ein Archiv fuer eingescannte Post. Daraus folgt:
+ *
+ * 1. HELL UND NEUTRAL. Ein Scan ist ein Bild von Papier. Die Oberflaeche
+ *    drumherum darf ihm keine Farbe leihen, sonst beurteilt man den Scan
+ *    falsch. Der Grund ist deshalb ein kuehles Kopierpapier-Grau, nicht das
+ *    warme Leinen von lager und nicht das Weiss von finanzen.
+ *
+ * 2. DER EINGANGSSTEMPEL IST DIE EINE FARBE. Buerostempel sind violett.
+ *    Ausser ihm traegt nichts in dieser App eine Buntfarbe, ausser den
+ *    Kategorien, die eigene mitbringen.
+ *
+ * 3. TEXTERKENNUNG IST KEIN NEBENZUSTAND. Ob der Text eines Briefes erkannt
+ *    wurde, entscheidet, ob man ihn in zwei Jahren wiederfindet. Vorher
+ *    stand dafuer ein Zeichen in der Ecke: "ok", "...", "!" oder "-". Das
+ *    hat nur verstanden, wer den Code kennt. Jetzt sagt es der Stempel.
+ *
+ * Schrift: Instrument Sans fuer den Text, Courier Prime fuer Stempel,
+ * Aktenzeichen und Daten. Die Schreibmaschine ist das Vokabular eines
+ * Buero-Archivs, nicht Zierde. Beide liegen als npm-Abhaengigkeit im Haus.
+ */
+
+@import '@fontsource-variable/instrument-sans/index.css';
+@import '@fontsource/courier-prime/400.css';
+@import '@fontsource/courier-prime/700.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --bg: #0f172a;
-  --bg-card: #1e293b;
-  --bg-input: #334155;
-  --bg-hover: #334155;
-  --text: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --danger: #ef4444;
-  --danger-hover: #dc2626;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --border: #334155;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --nav-height: 64px;
+  /* Kopierpapier, kuehl. */
+  --bg: #eceeed;
+  --bg-card: #ffffff;
+  --bg-input: #f5f6f6;
+  --bg-hover: #f0f2f1;
+  --bg-deckel: #e1e4e3;
+  --text: #1f2220;
+  --text-secondary: #5b605d;
+  --text-muted: #8b918e;
+  --border: #d3d7d6;
+  --border-fein: #e4e7e6;
+
+  /* Stempelviolett. Die einzige Hausfarbe. */
+  --primary: #5b3a78;
+  --primary-hover: #4a2f62;
+  --primary-soft: rgba(91, 58, 120, .10);
+
+  --danger: #a33529;
+  --danger-hover: #8a2c22;
+  --success: #3f7a52;
+  --warning: #9a6b1f;
+
+  --radius: 6px;
+  --radius-sm: 4px;
+  --nav-height: 60px;
+
+  --schrift: 'Instrument Sans Variable', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --schrift-akte: 'Courier Prime', ui-monospace, 'Courier New', monospace;
 }
 
 *, *::before, *::after {
@@ -35,7 +79,7 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--schrift);
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;
@@ -43,11 +87,30 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1 { font-size: 1.5rem; font-weight: 700; }
-h2 { font-size: 1.15rem; font-weight: 600; margin-bottom: 0.5rem; }
+h1 { font-size: 1.5rem; font-weight: 650; letter-spacing: -.012em; }
+h2 { font-size: 1.15rem; font-weight: 600; margin-bottom: 0.5rem; letter-spacing: -.008em; }
 h3 { font-size: 1rem; font-weight: 600; }
+
 a { color: var(--primary); text-decoration: none; }
 a:hover { text-decoration: underline; }
+
+/* Alles, was ein Aktenmerkmal ist: Datum, Aktenzeichen, Dateigroesse,
+   Seitenzahl. Schreibmaschine, damit es sich vom Inhalt des Briefes
+   unterscheidet. */
+.akte,
+.letter-card-date,
+.file-size,
+.detail-meta {
+  font-family: var(--schrift-akte);
+  font-size: .76rem;
+  letter-spacing: -.02em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
 
 .text-muted { color: var(--text-muted); }
 .text-sm { font-size: 0.8rem; }
@@ -165,6 +228,7 @@ section { margin-top: 1.5rem; }
   width: 100%;
   max-width: 380px;
   background: var(--bg-card);
+  border: 1px solid var(--border-fein);
   border-radius: var(--radius);
   padding: 2rem;
 }
@@ -183,6 +247,7 @@ section { margin-top: 1.5rem; }
 }
 .stat-card {
   background: var(--bg-card);
+  border: 1px solid var(--border-fein);
   border-radius: var(--radius-sm);
   padding: 1rem;
   text-align: center;
@@ -223,11 +288,20 @@ section { margin-top: 1.5rem; }
 
 .letter-card {
   background: var(--bg-card);
+  border: 1px solid var(--border-fein);
   border-radius: var(--radius-sm);
   padding: 0.75rem 1rem;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: border-color 0.15s, background 0.15s;
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
 }
+
+.letter-card:hover { border-color: var(--border); background: var(--bg-hover); }
+
+/* Der Inhalt des Briefes steht links, der Stempel rechts. */
+.letter-card-body { flex: 1; min-width: 0; }
 .letter-card:hover { background: var(--bg-hover); }
 .letter-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
 .letter-card-title { font-size: 0.95rem; font-weight: 600; }
@@ -246,10 +320,10 @@ section { margin-top: 1.5rem; }
   text-transform: uppercase;
   flex-shrink: 0;
 }
-.ocr-done { background: #10b98133; color: var(--success); }
-.ocr-pending { background: #64748b33; color: var(--text-muted); }
-.ocr-processing { background: #f59e0b33; color: var(--warning); }
-.ocr-error { background: #ef444433; color: var(--danger); }
+.ocr-done { background: rgba(63, 122, 82, .12); color: var(--success); }
+.ocr-pending { background: var(--bg-input); color: var(--text-muted); }
+.ocr-processing { background: rgba(154, 107, 31, .12); color: var(--warning); }
+.ocr-error { background: rgba(163, 53, 41, .12); color: var(--danger); }
 
 /* --- Category badge --- */
 .category-badge {
@@ -438,8 +512,8 @@ section { margin-top: 1.5rem; }
   align-items: center;
   justify-content: center;
   font-size: 0.8rem;
-  color: var(--muted);
-  background: rgba(255,255,255,0.04);
+  color: var(--text-muted);
+  background: var(--bg-input);
   border-radius: 4px;
   padding: 0.5rem;
   text-align: center;
@@ -449,7 +523,7 @@ section { margin-top: 1.5rem; }
   position: absolute;
   top: 0.25rem;
   left: 0.25rem;
-  background: var(--primary, #5b8def);
+  background: var(--primary);
   color: #fff;
   font-size: 0.7rem;
   padding: 0.1rem 0.4rem;
@@ -580,3 +654,99 @@ section { margin-top: 1.5rem; }
 .bottom-nav-item:hover { color: var(--text-secondary); }
 .bottom-nav-item.active { color: var(--primary); }
 .bottom-nav-item svg { width: 22px; height: 22px; }
+
+/* --- Eingangsstempel --------------------------------------------------
+   Siehe components/Eingangsstempel.tsx. Traegt Eingangsdatum und den Stand
+   der Texterkennung in einem Zeichen. Die Unterscheidung liegt in der Form
+   des Rahmens, nicht in seiner Farbe: ein Archiv wird auch auf einem
+   Handy im Flur gelesen, und Farbe allein traegt dort nicht. */
+
+.stempel {
+  flex-shrink: 0;
+  width: 66px;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 5px 4px;
+  border: 2px solid var(--primary);
+  border-radius: 5px;
+  color: var(--primary);
+  font-family: var(--schrift-akte);
+  line-height: 1.1;
+  /* Leicht schief, wie von Hand aufgedrueckt. Zwei Grad, nicht mehr:
+     es soll wie ein Stempel wirken und nicht wie ein Fehler im Layout. */
+  transform: rotate(-2deg);
+  transition: opacity .15s;
+}
+
+.stempel-kopf {
+  font-size: .5rem;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  opacity: .8;
+}
+
+.stempel-tag {
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: -.03em;
+}
+
+.stempel-jahr {
+  font-size: .62rem;
+  opacity: .85;
+}
+
+.stempel-ohne { font-size: .68rem; font-weight: 400; opacity: .7; }
+
+/* Text erkannt: voller Stempel. Der Brief ist auffindbar. */
+.stempel-done { border-style: solid; }
+
+/* Laeuft gerade: gestrichelt, also noch nicht fertig. */
+.stempel-processing {
+  border-style: dashed;
+  opacity: .75;
+}
+
+/* Fehlgeschlagen: durchgestrichen. Der Brief liegt als Bild da und ist
+   ueber seinen Inhalt nicht zu finden. Das ist der Zustand, der wehtut,
+   und er soll auffallen. */
+.stempel-error {
+  border-color: var(--danger);
+  color: var(--danger);
+  position: relative;
+}
+
+.stempel-error::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  height: 2px;
+  background: var(--danger);
+  transform: rotate(-8deg);
+}
+
+/* Noch nicht begonnen: blass, aber vorhanden. */
+.stempel-pending {
+  border-color: var(--border);
+  color: var(--text-muted);
+  border-style: dotted;
+}
+
+/* Der alte Zustandspunkt in der Ecke. Er stand fuer dasselbe wie der
+   Stempel und sagte weniger; die Karte zeigt ihn nicht mehr. Die Regel
+   bleibt fuer die Detailseite, wo der Stand ausgeschrieben danebensteht. */
+.ocr-badge {
+  font-family: var(--schrift-akte);
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 0.12rem 0.4rem;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
