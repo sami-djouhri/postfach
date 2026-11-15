@@ -95,11 +95,11 @@ export default function BulkUploadPage() {
   };
 
   const statusLabel = (s: string) => ({
-    'upload': '⏳ Hochladen…',
-    'processing-ocr': '📄 OCR läuft…',
-    'processing-analysis': '🧠 KI-Analyse…',
-    'done': '✅ Fertig',
-    'error': '⚠ Fehler',
+    'upload': 'Wird hochgeladen',
+    'processing-ocr': 'Texterkennung läuft',
+    'processing-analysis': 'Analyse läuft',
+    'done': 'Fertig',
+    'error': 'Fehler',
   }[s] || s);
 
   const summary = items.length === 0 ? null : (() => {

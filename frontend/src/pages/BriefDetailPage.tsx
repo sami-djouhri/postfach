@@ -6,6 +6,7 @@ import CategoryBadge from '../components/CategoryBadge';
 import TagChip from '../components/TagChip';
 import FileUpload from '../components/FileUpload';
 import LlmAnalysis from '../components/LlmAnalysis';
+import FristAbschnitt from '../components/FristAbschnitt';
 
 export default function BriefDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -161,19 +162,19 @@ export default function BriefDetailPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <button className="btn btn-ghost" onClick={() => navigate('/briefe')}>&larr; Zurueck</button>
+        <button className="btn btn-ghost" onClick={() => navigate(-1)}>&larr; Zurück</button>
         <div className="header-actions">
           <a
             href={apiUrl(`/letters/${id}/pdf`)}
-            className="btn btn-secondary"
+            className="btn btn-secondary btn-sm"
             download
           >
             PDF
           </a>
-          <button className="btn btn-secondary" onClick={toggleArchive}>
+          <button className="btn btn-secondary btn-sm" onClick={toggleArchive}>
             {letter.is_archived ? 'Wiederherstellen' : 'Archivieren'}
           </button>
-          <button className="btn btn-danger" onClick={handleDelete}>Loeschen</button>
+          <button className="btn btn-danger btn-sm" onClick={handleDelete}>Löschen</button>
         </div>
       </div>
 
@@ -183,12 +184,12 @@ export default function BriefDetailPage() {
       {(letter.ocr_status === 'processing' || letter.ocr_status === 'pending' || letter.analysis_status === 'processing') && (
         <div className="detail-section" style={{display:'flex', gap:'1rem', alignItems:'center'}}>
           {letter.ocr_status !== 'done' && (
-            <span className="badge" title="OCR läuft im Hintergrund">
-              📄 OCR: {letter.ocr_status === 'processing' ? 'läuft…' : letter.ocr_status === 'pending' ? 'wartet' : letter.ocr_status}
+            <span className="badge" title="Texterkennung läuft im Hintergrund">
+              Texterkennung: {letter.ocr_status === 'processing' ? 'läuft' : letter.ocr_status === 'pending' ? 'wartet' : letter.ocr_status}
             </span>
           )}
           {letter.analysis_status === 'processing' && (
-            <span className="badge" title="KI-Analyse läuft im Hintergrund">🧠 KI-Analyse läuft…</span>
+            <span className="badge" title="Analyse läuft im Hintergrund">Analyse läuft</span>
           )}
           <span className="text-muted" style={{fontSize:'0.85em'}}>aktualisiert sich automatisch</span>
         </div>
@@ -275,6 +276,8 @@ export default function BriefDetailPage() {
           </div>
         )}
       </section>
+
+      <FristAbschnitt letter={letter} onGeaendert={load} />
 
       {/* Snooze + Paperless-Forward (Saganta Phase 2) */}
       <section className="detail-section">
@@ -386,6 +389,7 @@ export default function BriefDetailPage() {
           hasOcrText={!!letter.ocr_text}
           currentSummary={letter.llm_summary}
           onApply={applyLlm}
+          onFrist={async (datum: string) => { await api.put(`/letters/${id}`, { frist_bis: datum }); load(); }}
         />
       </section>
     </div>

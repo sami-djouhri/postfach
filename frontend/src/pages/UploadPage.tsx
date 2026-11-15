@@ -60,7 +60,15 @@ export default function UploadPage() {
 
   return (
     <div className="page">
-      <h1>Brief erfassen</h1>
+      <div className="page-header">
+        <h1>Brief erfassen</h1>
+        {/* Viele Dateien auf einmal und Sprachnotiz hatten eigene Reiter. Die
+            Fussleiste traegt jetzt nur die fuenf Wege, die man taeglich geht. */}
+        <div className="header-actions">
+          <button className="btn btn-secondary btn-sm" onClick={() => navigate('/bulk')}>Viele Dateien</button>
+          <button className="btn btn-secondary btn-sm" onClick={() => navigate('/voice')}>Sprachnotiz</button>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit}>
         <div className="form-group">

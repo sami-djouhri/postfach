@@ -35,6 +35,29 @@ def _sanitize_fts(q: str) -> str:
     return " ".join(tokens)
 
 
+def fts_treffer(db: Session, query: str) -> list[int] | None:
+    """Alle Brief-IDs, deren Index auf die Abfrage passt, ohne Mandantenfilter.
+
+    Der Mandant wird vom Aufrufer gefiltert (``Letter.user_id``), wie in
+    ``SearchService.search``. ``None`` heisst: die Abfrage ist fuer FTS5 nicht
+    brauchbar (leer nach dem Saeubern oder Syntaxfehler), der Aufrufer faellt
+    auf LIKE zurueck.
+    """
+    sanitized = _sanitize_fts(query)
+    if not sanitized:
+        return None
+    try:
+        return [
+            r[0] for r in db.execute(
+                text("SELECT rowid FROM letter_fts WHERE letter_fts MATCH :q"),
+                {"q": sanitized},
+            ).all()
+        ]
+    except Exception as e:
+        logger.warning("FTS5 filter fail, fallback LIKE: %s", e)
+        return None
+
+
 class SearchService:
     def __init__(self, db: Session):
         self.db = db

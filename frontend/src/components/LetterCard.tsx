@@ -3,6 +3,7 @@ import { LetterListItem } from '../types';
 import CategoryBadge from './CategoryBadge';
 import TagChip from './TagChip';
 import Eingangsstempel from './Eingangsstempel';
+import { datumDe, fristStufe, fristText, tageBis } from '../frist';
 
 interface Props {
   letter: LetterListItem;
@@ -20,6 +21,16 @@ export default function LetterCard({ letter }: Props) {
         {letter.sender && <p className="letter-card-sender">{letter.sender}</p>}
         <div className="letter-card-meta">
           <CategoryBadge category={letter.category} />
+          {letter.erledigt_am ? (
+            <span className="frist-marke frist-erledigt">erledigt</span>
+          ) : letter.frist_bis ? (
+            <span
+              className={`frist-marke frist-${fristStufe(tageBis(letter.frist_bis))}`}
+              title={`Frist ${datumDe(letter.frist_bis)}`}
+            >
+              {fristText(tageBis(letter.frist_bis))}
+            </span>
+          ) : null}
           <span className="letter-card-files akte">
             {letter.file_count} Datei{letter.file_count !== 1 ? 'en' : ''}
           </span>

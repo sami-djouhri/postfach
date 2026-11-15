@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Query, UploadFile, File
@@ -16,6 +16,11 @@ from app.db import SessionLocal, get_db
 from app.domain import ALLOWED_CONTENT_TYPES, EXTENSION_MAP, LetterCategory, DomainError
 from app.models import Letter, LetterFile, User
 from app.schemas import (
+    FacettenOut,
+    FristEintrag,
+    FristenOut,
+    FristVorschlagOut,
+    VorschlagEintrag,
     LetterCreate,
     LetterFileOut,
     LetterListOut,
@@ -24,11 +29,11 @@ from app.schemas import (
     LlmAnalysisResult,
     TagOut,
 )
-from app.services.kalender_adapter import KalenderAdapter
 from app.services.letter_service import LetterService
 from app.services.llm_service import LlmService
 from app.services.ocr_service import OcrService
 from app.services.pdf_service import PdfService
+from app.services import frist_service
 
 router = APIRouter(prefix="/api/letters", tags=["letters"])
 log = logging.getLogger(__name__)
@@ -148,7 +153,7 @@ def _post_upload_background(letter_id: int, user_id: int) -> None:
     """Auto-Pipeline nach normalem Upload: OCR (wenn nicht done) + LLM (wenn kein summary).
 
     Idempotent: läuft die OCR durch und das ocr_text ist da, wird via
-    _quick_scan_background die LLM-Analyse + Kalender-Push gemacht."""
+    _quick_scan_background die LLM-Analyse gemacht."""
     db = SessionLocal()
     try:
         letter = db.query(Letter).filter_by(id=letter_id, user_id=user_id).first()
@@ -190,7 +195,7 @@ def _post_upload_background(letter_id: int, user_id: int) -> None:
 
 
 def _quick_scan_background(letter_id: int, user_id: int) -> None:
-    """LLM-Analyse + Kalender-Sync nach quick_scan. Eigene DB-Session, eigener Event-Loop."""
+    """LLM-Analyse nach quick_scan. Eigene DB-Session, eigener Event-Loop."""
     db = SessionLocal()
     try:
         letter = db.query(Letter).filter_by(id=letter_id, user_id=user_id).first()
@@ -206,18 +211,8 @@ def _quick_scan_background(letter_id: int, user_id: int) -> None:
         db.commit()
         log.info("quick-scan bg: letter %s analysiert (sender=%r, cat=%r)",
                  letter_id, letter.sender, letter.category)
-
-        # Kalender-Push fire-and-forget (Fehler in log, nicht weiterreichen)
-        if result.fristen:
-            kalender = KalenderAdapter()
-            for frist in result.fristen:
-                try:
-                    asyncio.run(kalender.push_deadline(
-                        typ=frist.typ, datum=frist.datum,
-                        beschreibung=frist.beschreibung, letter_id=letter_id,
-                    ))
-                except Exception as e:
-                    log.warning("quick-scan bg: kalender push fehlgeschlagen: %s", e)
+        # Keine Weitergabe an den Kalender (Entscheid 2026-11-13): Fristen
+        # stehen nur im Briefkasten und gelten erst nach Bestaetigung (frist_bis).
     finally:
         db.close()
 
@@ -255,6 +250,8 @@ def _letter_out(l: Letter) -> LetterOut:
         is_archived=l.is_archived,
         snoozed_until=l.snoozed_until,
         paperless_id=l.paperless_id,
+        frist_bis=l.frist_bis,
+        erledigt_am=l.erledigt_am,
         created_at=l.created_at,
         updated_at=l.updated_at,
         files=[_file_out(f) for f in l.files],
@@ -274,6 +271,8 @@ def _letter_list_out(l: Letter, file_count: int) -> LetterListOut:
         is_archived=l.is_archived,
         snoozed_until=l.snoozed_until,
         paperless_id=l.paperless_id,
+        frist_bis=l.frist_bis,
+        erledigt_am=l.erledigt_am,
         created_at=l.created_at,
         file_count=file_count,
         tags=[_tag_out(t) for t in l.tags],
@@ -300,6 +299,78 @@ def list_senders(
     ).scalars().all()
     return [s for s in rows if s]
 
+# Alle festen Pfade unter /api/letters stehen VOR "/{letter_id}". FastAPI
+# prueft in Reihenfolge, und "/{letter_id}" passt auf jedes Wort: steht ein
+# fester Pfad dahinter, endet sein Aufruf als 422 ("letter_id ist keine Zahl").
+# So ging es /semantic-search bis 2026-11-13.
+
+
+def _heute() -> date:
+    return date.today()
+
+
+@router.get("/fristen", response_model=FristenOut)
+def fristen(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Offene Fristen (frueheste zuerst) und erkannte, noch nicht bestaetigte."""
+    heute = _heute()
+    offen = [
+        FristEintrag(
+            id=e["letter"].id, title=e["letter"].title, sender=e["letter"].sender,
+            category=e["letter"].category, frist_bis=e["letter"].frist_bis,
+            tage=e["tage"], ueberfaellig=e["ueberfaellig"],
+        )
+        for e in frist_service.offene_fristen(db, user.id, heute)
+    ]
+    vorschlaege = [
+        VorschlagEintrag(
+            id=e["letter"].id, title=e["letter"].title, sender=e["letter"].sender,
+            vorschlag=FristVorschlagOut(datum=e["vorschlag"].datum, stelle=e["vorschlag"].stelle),
+        )
+        for e in frist_service.offene_vorschlaege(db, user.id, heute)
+    ]
+    return FristenOut(heute=heute, offen=offen, vorschlaege=vorschlaege)
+
+
+@router.get("/facetten", response_model=FacettenOut)
+def facetten(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Filterwerte mit Anzahl: Kategorie, Absender, Tag, Jahr."""
+    return FacettenOut(**LetterService(db).facetten(user.id))
+
+
+@router.get("/semantic-search", response_model=list[LetterListOut])
+def semantic_search(
+    q: str = Query(min_length=1),
+    limit: int = Query(10, ge=1, le=50),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """k-NN-Suche über die Embedding-Repräsentation der Briefe. Snippet-/
+    Rank-Order folgt der Vector-Distance (niedriger = ähnlicher)."""
+    from app.services import semantic_service
+    try:
+        hits = semantic_service.search(db, user.id, q, limit=limit)
+    except Exception as e:
+        log.warning("semantic-search failed: %s", e)
+        return []
+    if not hits:
+        return []
+    id_order = {lid: i for i, (lid, _) in enumerate(hits)}
+    stmt = (
+        select(Letter)
+        .where(Letter.id.in_(id_order.keys()), Letter.user_id == user.id, Letter.deleted_at.is_(None))
+        .options(joinedload(Letter.tags), joinedload(Letter.files))
+    )
+    letters = db.execute(stmt).unique().scalars().all()
+    letters.sort(key=lambda l: id_order.get(l.id, 1 << 30))
+    return [_letter_list_out(l, len(l.files)) for l in letters]
+
+
 @router.get("", response_model=list[LetterListOut])
 def list_letters(
     category: str | None = None,
@@ -310,6 +381,10 @@ def list_letters(
     letter_date_from: str | None = Query(None, description="YYYY-MM-DD inklusiv"),
     letter_date_to: str | None = Query(None, description="YYYY-MM-DD inklusiv"),
     tag_ids_all: str | None = Query(None, description="Komma-Liste tag-IDs: alle müssen am Brief sein"),
+    correspondent_id: int | None = Query(None, description="Absender (Korrespondent)"),
+    jahr: int | None = Query(None, ge=1900, le=2999, description="Briefdatum, sonst Eingang"),
+    q: str | None = Query(None, description="Volltext (FTS5), mit den Filtern kombinierbar"),
+    status: str | None = Query(None, pattern="^(offen|erledigt)$"),
     include_snoozed: bool = False,
     show_deleted: bool = False,
     skip: int = Query(0, ge=0),
@@ -326,6 +401,7 @@ def list_letters(
         include_snoozed=include_snoozed, show_deleted=show_deleted,
         senders=senders_list, letter_date_from=letter_date_from,
         letter_date_to=letter_date_to, tag_ids_all=tag_ids_all_list,
+        correspondent_id=correspondent_id, jahr=jahr, q=q, status=status,
     )
     return [_letter_list_out(item["letter"], item["file_count"]) for item in items]
 
@@ -396,6 +472,44 @@ def restore_letter(
 ):
     svc = LetterService(db)
     letter = svc.restore(letter_id, user.id)
+    return _letter_out(letter)
+
+
+@router.get("/{letter_id}/frist-vorschlag", response_model=FristVorschlagOut | None)
+def frist_vorschlag(
+    letter_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Die im Text erkannte Frist, oder null. Setzt nichts."""
+    letter = LetterService(db).get(letter_id, user.id)
+    v = frist_service.vorschlag_fuer(letter)
+    return FristVorschlagOut(datum=v.datum, stelle=v.stelle) if v else None
+
+
+@router.post("/{letter_id}/erledigt", response_model=LetterOut)
+def erledigen(
+    letter_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    letter = LetterService(db).get(letter_id, user.id)
+    frist_service.erledigen(letter, datetime.now(timezone.utc))
+    db.commit()
+    db.refresh(letter)
+    return _letter_out(letter)
+
+
+@router.delete("/{letter_id}/erledigt", response_model=LetterOut)
+def wieder_oeffnen(
+    letter_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    letter = LetterService(db).get(letter_id, user.id)
+    frist_service.wieder_oeffnen(letter)
+    db.commit()
+    db.refresh(letter)
     return _letter_out(letter)
 
 
@@ -529,29 +643,8 @@ async def analyze_letter(
         letter.analysis_status = "error"
         db.commit()
 
-    # Push fristen to Kalender (fire-and-forget, errors logged but not blocking)
-    if result.fristen:
-        kalender = KalenderAdapter()
-        synced = 0
-        skipped = 0
-        errors: list[str] = []
-        for frist in result.fristen:
-            sync_result = await kalender.push_deadline(
-                typ=frist.typ,
-                datum=frist.datum,
-                beschreibung=frist.beschreibung,
-                letter_id=letter_id,
-            )
-            if sync_result.ok:
-                synced += 1
-            elif sync_result.status == "skipped":
-                skipped += 1
-            else:
-                errors.append(sync_result.message or "Kalender-Sync fehlgeschlagen")
-        result.calendar_synced = synced
-        result.calendar_skipped = skipped
-        result.calendar_errors = errors
-
+    # Die Fristen gehen nur als Vorschlag an die Oberflaeche zurueck, kein
+    # Kalender-Push mehr (Entscheid 2026-11-13).
     return result
 
 
@@ -881,7 +974,7 @@ def bulk_upload(
     user: User = Depends(get_current_user),
 ):
     """Bulk-Upload: pro File ein eigener Letter, gesamte Pipeline (Vision-Scan,
-    OCR, LLM, Kalender) läuft im Hintergrund. Response sofort mit den
+    OCR, LLM) läuft im Hintergrund. Response sofort mit den
     Letter-IDs; Client pollt `GET /letters/{id}` bis `analysis_status=done`.
     """
     if not files:
@@ -947,30 +1040,3 @@ def bulk_upload(
         })
 
     return {"letters": created}
-
-@router.get("/semantic-search", response_model=list[LetterListOut])
-def semantic_search(
-    q: str = Query(min_length=1),
-    limit: int = Query(10, ge=1, le=50),
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    """k-NN-Suche über die Embedding-Repräsentation der Briefe. Snippet-/
-    Rank-Order folgt der Vector-Distance (niedriger = ähnlicher)."""
-    from app.services import semantic_service
-    try:
-        hits = semantic_service.search(db, user.id, q, limit=limit)
-    except Exception as e:
-        log.warning("semantic-search failed: %s", e)
-        return []
-    if not hits:
-        return []
-    id_order = {lid: i for i, (lid, _) in enumerate(hits)}
-    stmt = (
-        select(Letter)
-        .where(Letter.id.in_(id_order.keys()), Letter.user_id == user.id, Letter.deleted_at.is_(None))
-        .options(joinedload(Letter.tags), joinedload(Letter.files))
-    )
-    letters = db.execute(stmt).unique().scalars().all()
-    letters.sort(key=lambda l: id_order.get(l.id, 1 << 30))
-    return [_letter_list_out(l, len(l.files)) for l in letters]

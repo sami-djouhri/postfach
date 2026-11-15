@@ -7,7 +7,26 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.config import settings
 from app.domain import DomainError
-from app.models import Letter, LetterFile, Tag, letter_tag
+from app.models import Correspondent, Letter, LetterFile, Tag, letter_tag
+from app.services.search_service import fts_treffer
+
+
+def jahr_ausdruck():
+    """Das Jahr eines Briefes: Briefdatum, sonst Eingang, sonst Anlage.
+
+    Die Datumsfelder sind Text im Format JJJJ-MM-TT, die ersten vier Zeichen
+    sind also das Jahr. Ein Brief ohne beide Daten faellt auf seine Anlage im
+    Dienst zurueck, statt in keinem Jahr aufzutauchen.
+    """
+    return func.substr(
+        func.coalesce(
+            func.nullif(Letter.letter_date, ""),
+            func.nullif(Letter.received_date, ""),
+            func.strftime("%Y-%m-%d", Letter.created_at),
+        ),
+        1,
+        4,
+    )
 
 
 class LetterService:
@@ -29,6 +48,10 @@ class LetterService:
         letter_date_from: str | None = None,
         letter_date_to: str | None = None,
         tag_ids_all: list[int] | None = None,
+        correspondent_id: int | None = None,
+        jahr: int | None = None,
+        q: str | None = None,
+        status: str | None = None,
     ) -> list[dict]:
         stmt = (
             select(Letter)
@@ -58,6 +81,29 @@ class LetterService:
             # JEDER der gegebenen Tags muss am Letter sein → eigene any() pro Tag.
             for tid in tag_ids_all:
                 stmt = stmt.where(Letter.tags.any(Tag.id == tid))
+        if correspondent_id:
+            stmt = stmt.where(Letter.correspondent_id == correspondent_id)
+        if jahr:
+            stmt = stmt.where(jahr_ausdruck() == f"{jahr:04d}")
+        if status == "offen":
+            stmt = stmt.where(Letter.erledigt_am.is_(None))
+        elif status == "erledigt":
+            stmt = stmt.where(Letter.erledigt_am.is_not(None))
+        if q and q.strip():
+            ids = fts_treffer(self.db, q)
+            if ids is not None:
+                stmt = stmt.where(Letter.id.in_(ids))
+            else:
+                pattern = f"%{q.strip()}%"
+                stmt = stmt.where(
+                    or_(
+                        Letter.title.ilike(pattern),
+                        Letter.sender.ilike(pattern),
+                        Letter.ocr_text.ilike(pattern),
+                        Letter.notes.ilike(pattern),
+                        Letter.llm_summary.ilike(pattern),
+                    )
+                )
         if search:
             pattern = f"%{search}%"
             stmt = stmt.where(
@@ -117,7 +163,7 @@ class LetterService:
         # snoozed_until: explizites null bedeutet "unsnooze" und muss durchkommen.
         # Caller liefert nur Keys mit, die im Payload waren (exclude_unset=True),
         # daher dürfen wir hier nicht generell None-Werte filtern.
-        nullable_explicit = {"snoozed_until", "paperless_id"}
+        nullable_explicit = {"snoozed_until", "paperless_id", "frist_bis"}
         for key, value in kwargs.items():
             if key in nullable_explicit or value is not None:
                 setattr(letter, key, value)
@@ -191,6 +237,46 @@ class LetterService:
                 Letter.user_id == user_id, Letter.ocr_status == "pending", Letter.deleted_at.is_(None)
             )
         ).scalar() or 0
+
+    def facetten(self, user_id: int) -> dict[str, list[dict]]:
+        """Was sich filtern laesst, mit Anzahl, aus den vorhandenen Daten.
+
+        Gezaehlt werden alle nicht geloeschten Briefe des Mandanten. Keine
+        eigene Tabelle: Absender sind die Korrespondenten, Ordner sind
+        Kategorie, Tag und Jahr.
+        """
+        aktiv = (Letter.user_id == user_id, Letter.deleted_at.is_(None))
+        kategorien = self.db.execute(
+            select(Letter.category, func.count(Letter.id))
+            .where(*aktiv, Letter.category.is_not(None), Letter.category != "")
+            .group_by(Letter.category)
+            .order_by(func.count(Letter.id).desc(), Letter.category)
+        ).all()
+        absender = self.db.execute(
+            select(Correspondent.id, Correspondent.name, func.count(Letter.id))
+            .join(Letter, Letter.correspondent_id == Correspondent.id)
+            .where(*aktiv, Correspondent.user_id == user_id)
+            .group_by(Correspondent.id, Correspondent.name)
+            .order_by(func.count(Letter.id).desc(), func.lower(Correspondent.name))
+        ).all()
+        tags = self.db.execute(
+            select(Tag.id, Tag.name, Tag.color, func.count(Letter.id))
+            .join(letter_tag, letter_tag.c.tag_id == Tag.id)
+            .join(Letter, Letter.id == letter_tag.c.letter_id)
+            .where(*aktiv, Tag.user_id == user_id)
+            .group_by(Tag.id, Tag.name, Tag.color)
+            .order_by(func.lower(Tag.name))
+        ).all()
+        j = jahr_ausdruck()
+        jahre = self.db.execute(
+            select(j, func.count(Letter.id)).where(*aktiv).group_by(j).order_by(j.desc())
+        ).all()
+        return {
+            "kategorien": [{"wert": k, "name": k, "anzahl": n} for k, n in kategorien],
+            "absender": [{"wert": str(i), "name": name, "anzahl": n} for i, name, n in absender],
+            "tags": [{"wert": str(i), "name": name, "color": c, "anzahl": n} for i, name, c, n in tags],
+            "jahre": [{"wert": y, "name": y, "anzahl": n} for y, n in jahre if y],
+        }
 
     def category_counts(self, user_id: int) -> dict[str, int]:
         rows = self.db.execute(

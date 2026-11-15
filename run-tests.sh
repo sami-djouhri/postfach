@@ -11,7 +11,7 @@
 # read_only, die Testdateien kommen dort nicht hinein. Der Wegwerf-Container
 # haengt sie stattdessen ein und ist danach weg.
 #
-# Erwartung: "Ran 19 tests ... OK". Laeuft eine kleinere Zahl durch, wurde ein
+# Erwartung: "Ran 56 tests ... OK". Laeuft eine kleinere Zahl durch, wurde ein
 # Modul still uebersprungen. Das ist nicht als gruen zu verbuchen.
 set -euo pipefail
 cd "$(dirname "$0")"

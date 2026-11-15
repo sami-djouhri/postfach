@@ -40,6 +40,9 @@ export interface Letter {
   is_archived: boolean;
   snoozed_until: string | null;
   paperless_id: string | null;
+  // Bestaetigte Frist (JJJJ-MM-TT) und Zeitpunkt des Abhakens; null = keine / offen.
+  frist_bis: string | null;
+  erledigt_am: string | null;
   created_at: string;
   updated_at: string;
   files: LetterFile[];
@@ -57,6 +60,8 @@ export interface LetterListItem {
   is_archived: boolean;
   snoozed_until: string | null;
   paperless_id: string | null;
+  frist_bis: string | null;
+  erledigt_am: string | null;
   created_at: string;
   file_count: number;
   tags: Tag[];
@@ -71,10 +76,43 @@ export interface LlmResult {
     datum: string;
     beschreibung: string;
   }>;
-  calendar_synced: number;
-  calendar_skipped: number;
-  calendar_errors: string[];
   error: string | null;
+}
+
+export interface FristVorschlag {
+  datum: string;
+  // Die Stelle im Brief, an der die Frist steht.
+  stelle: string;
+}
+
+export interface FristEintrag {
+  id: number;
+  title: string;
+  sender: string | null;
+  category: string | null;
+  frist_bis: string;
+  tage: number;
+  ueberfaellig: boolean;
+}
+
+export interface Fristen {
+  heute: string;
+  offen: FristEintrag[];
+  vorschlaege: Array<{ id: number; title: string; sender: string | null; vorschlag: FristVorschlag }>;
+}
+
+export interface FacetteWert {
+  wert: string;
+  name: string;
+  anzahl: number;
+  color?: string | null;
+}
+
+export interface Facetten {
+  kategorien: FacetteWert[];
+  absender: FacetteWert[];
+  tags: FacetteWert[];
+  jahre: FacetteWert[];
 }
 
 export interface Stats {

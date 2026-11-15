@@ -1,8 +1,9 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy import (
     Boolean,
     Column,
+    Date,
     DateTime,
     ForeignKey,
     Integer,
@@ -95,6 +96,11 @@ class Letter(Base):
     snoozed_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     paperless_id: Mapped[str | None] = mapped_column(String(64), nullable=True)  # task-uuid initial, später doc-id
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)  # soft-delete; None = aktiv
+    # Frist und Erledigt (Migration 0011). `frist_bis` setzt nur der Nutzer, ein
+    # Vorschlag aus Text oder Analyse wird erst mit seiner Bestaetigung zur Frist.
+    # `erledigt_am` NULL heisst offen.
+    frist_bis: Mapped[date | None] = mapped_column(Date, nullable=True)
+    erledigt_am: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     correspondent_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("correspondent.id", ondelete="SET NULL"), nullable=True, index=True,
     )

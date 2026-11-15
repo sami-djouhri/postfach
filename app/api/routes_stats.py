@@ -26,6 +26,8 @@ def stats(
             received_date=item["letter"].received_date,
             ocr_status=item["letter"].ocr_status,
             is_archived=item["letter"].is_archived,
+            frist_bis=item["letter"].frist_bis,
+            erledigt_am=item["letter"].erledigt_am,
             created_at=item["letter"].created_at,
             file_count=item["file_count"],
             tags=[TagOut(id=t.id, name=t.name, color=t.color) for t in item["letter"].tags],

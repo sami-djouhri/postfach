@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AuthProvider } from './auth';
 import './styles/global.css';
+import './saganta-kopf.js';
 
 // Read base path from meta tag injected by reverse proxy sub_filter
 const baseMeta = document.querySelector('meta[name="router-base"]');

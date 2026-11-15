@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from pydantic import BaseModel, Field
 
 
@@ -92,6 +92,9 @@ class LetterUpdate(BaseModel):
     # das gesondert via model_dump(exclude_unset=True).
     snoozed_until: datetime | None = None
     paperless_id: str | None = None
+    # Frist bestaetigen oder entfernen. Wie snoozed_until: ein explizites null
+    # entfernt die Frist, ein fehlendes Feld laesst sie stehen.
+    frist_bis: date | None = None
 
 
 class LetterOut(BaseModel):
@@ -109,6 +112,8 @@ class LetterOut(BaseModel):
     is_archived: bool
     snoozed_until: datetime | None = None
     paperless_id: str | None = None
+    frist_bis: date | None = None
+    erledigt_am: datetime | None = None
     created_at: datetime
     updated_at: datetime
     files: list[LetterFileOut]
@@ -126,9 +131,60 @@ class LetterListOut(BaseModel):
     is_archived: bool
     snoozed_until: datetime | None = None
     paperless_id: str | None = None
+    frist_bis: date | None = None
+    erledigt_am: datetime | None = None
     created_at: datetime
     file_count: int
     tags: list[TagOut]
+
+
+# --- Fristen ---
+
+class FristVorschlagOut(BaseModel):
+    """Eine im Text gefundene Frist. Nur ein Vorschlag, nichts ist gesetzt."""
+    datum: date
+    # Die Stelle im Brief, an der die Frist steht, damit der Nutzer sie
+    # pruefen kann, bevor er sie uebernimmt.
+    stelle: str
+
+
+class FristEintrag(BaseModel):
+    id: int
+    title: str
+    sender: str | None
+    category: str | None
+    frist_bis: date
+    tage: int  # bis zur Frist; negativ heisst ueberfaellig
+    ueberfaellig: bool
+
+
+class VorschlagEintrag(BaseModel):
+    id: int
+    title: str
+    sender: str | None
+    vorschlag: FristVorschlagOut
+
+
+class FristenOut(BaseModel):
+    heute: date
+    offen: list[FristEintrag]
+    vorschlaege: list[VorschlagEintrag]
+
+
+# --- Filter ---
+
+class FacetteWert(BaseModel):
+    wert: str
+    name: str
+    anzahl: int
+    color: str | None = None
+
+
+class FacettenOut(BaseModel):
+    kategorien: list[FacetteWert]
+    absender: list[FacetteWert]
+    tags: list[FacetteWert]
+    jahre: list[FacetteWert]
 
 
 # --- LLM Analysis ---
@@ -145,9 +201,6 @@ class LlmAnalysisResult(BaseModel):
     titel: str | None = None
     zusammenfassung: str | None = None
     fristen: list[FristItem] = Field(default_factory=list)
-    calendar_synced: int = 0
-    calendar_skipped: int = 0
-    calendar_errors: list[str] = Field(default_factory=list)
     error: str | None = None
 
 

@@ -8,10 +8,6 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE: int = 20 * 1024 * 1024  # 20 MB
     FILES_DIR: str = "/app/data/files"
     SESSION_EXPIRE_HOURS: int = 72
-    KALENDER_BASE_URL: str = ""
-    KALENDER_FEED_TOKEN: str = ""
-    KALENDER_PASSWORD: str = ""
-    FEED_TOKEN: str = ""
     KG_INTERNAL_TOKEN: str = ""
     STT_URL: str = ""  # ai-stt /api/stt, z.B. http://host.docker.internal:5003
     # Wenn gesetzt: Bild-Uploads werden vor dem Ablegen entzerrt und zu PDF

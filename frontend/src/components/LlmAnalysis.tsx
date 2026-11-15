@@ -7,9 +7,11 @@ interface Props {
   hasOcrText: boolean;
   currentSummary: string | null;
   onApply: (data: { sender?: string; category?: string; llm_summary?: string }) => void;
+  // Eine Frist aus der Analyse als Frist des Briefes setzen (erst auf Klick).
+  onFrist?: (datum: string) => void;
 }
 
-export default function LlmAnalysis({ letterId, hasOcrText, currentSummary, onApply }: Props) {
+export default function LlmAnalysis({ letterId, hasOcrText, currentSummary, onApply, onFrist }: Props) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<LlmResult | null>(null);
   const [error, setError] = useState('');
@@ -86,16 +88,14 @@ export default function LlmAnalysis({ letterId, hasOcrText, currentSummary, onAp
                   <li key={`${frist.typ}-${frist.datum}-${index}`}>
                     <strong>{frist.datum}</strong> {frist.beschreibung}
                     <span className="text-muted"> ({frist.typ})</span>
+                    {onFrist && /^\d{4}-\d{2}-\d{2}$/.test(frist.datum) && (
+                      <button className="btn btn-ghost btn-sm" onClick={() => onFrist(frist.datum)}>
+                        Als Frist übernehmen
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
-              <p className="text-muted">
-                Kalender: {result.calendar_synced} synchronisiert
-                {result.calendar_skipped ? `, ${result.calendar_skipped} uebersprungen` : ''}
-              </p>
-              {result.calendar_errors?.map((msg, index) => (
-                <p key={index} className="error-text">{msg}</p>
-              ))}
             </div>
           )}
           <button

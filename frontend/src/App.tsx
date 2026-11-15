@@ -37,6 +37,9 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+      {/* Saganta-Kopf (erzeugt aus saganta/scripts/kopf-erzeugen.py): App-Wechsler,
+          Wortmarke und die Signaturlinie von Post, zu der der Briefkasten gehoert. */}
+      <saganta-kopf app="post" titel="Briefkasten"></saganta-kopf>
       <Routes>
         <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
         <Route path="/register" element={user ? <Navigate to="/" replace /> : <RegisterPage />} />

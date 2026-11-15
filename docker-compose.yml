@@ -51,8 +51,6 @@ services:
     environment:
       - DATABASE_URL=sqlite:////app/data/app.db
       - EMBEDDING_URL=http://embedding-service:8000
-      - KALENDER_BASE_URL=http://kalender:8085
-      - KALENDER_FEED_TOKEN=${KALENDER_FEED_TOKEN:-}
       - STT_URL=http://ai-stt:5003
       - VISION_SCAN_TIMEOUT=30
       # LLM_BASE_URL und VISION_SCAN_URL stehen hier NICHT mehr. Sie trugen

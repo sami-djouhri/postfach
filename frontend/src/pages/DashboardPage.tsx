@@ -4,6 +4,7 @@ import { api } from '../api';
 import { useAuth } from '../auth';
 import { Stats } from '../types';
 import LetterCard from '../components/LetterCard';
+import FristenBlock from '../components/FristenBlock';
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -28,13 +29,15 @@ export default function DashboardPage() {
           <p className="text-muted">Hallo, {user?.display_name}</p>
         </div>
         {/* Der Zugang zum eigenen Konto steht neben "Abmelden" und nicht in der
-            BottomNav: die traegt sieben Einträge und ist der Arbeitsweg, hier
-            geht es um den eigenen Zugang, der selten gebraucht wird. */}
+            BottomNav: die ist der Arbeitsweg, hier geht es um den eigenen
+            Zugang, der selten gebraucht wird. */}
         <div className="header-actions">
           <button className="btn btn-ghost" onClick={() => navigate('/konto')}>Konto</button>
           <button className="btn btn-ghost" onClick={logout}>Abmelden</button>
         </div>
       </div>
+
+      <FristenBlock />
 
       <div className="stats-grid">
         <div className="stat-card">
@@ -47,7 +50,7 @@ export default function DashboardPage() {
         </div>
         <div className="stat-card">
           <span className="stat-value">{stats.pending_ocr}</span>
-          <span className="stat-label">OCR ausstehend</span>
+          <span className="stat-label">Text noch nicht erkannt</span>
         </div>
       </div>
 
@@ -59,7 +62,7 @@ export default function DashboardPage() {
               <div
                 key={cat}
                 className="category-row"
-                onClick={() => navigate(`/briefe?category=${cat}`)}
+                onClick={() => navigate(`/briefe?kategorie=${encodeURIComponent(cat)}`)}
               >
                 <span>{cat}</span>
                 <span className="category-count">{count}</span>
