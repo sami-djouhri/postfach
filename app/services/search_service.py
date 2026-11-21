@@ -16,6 +16,7 @@ from sqlalchemy import or_, select, text
 from sqlalchemy.orm import Session, joinedload
 
 from app.models import Letter
+from app.suchmuster import ESCAPE, enthaelt
 
 logger = logging.getLogger(__name__)
 
@@ -90,18 +91,18 @@ class SearchService:
             except Exception as e:
                 logger.warning("FTS5 search fail, fallback LIKE: %s", e)
         # Fallback LIKE
-        pattern = f"%{query}%"
+        pattern = enthaelt(query)
         stmt = (
             select(Letter)
             .where(
                 Letter.user_id == user_id,
                 Letter.deleted_at.is_(None),
                 or_(
-                    Letter.title.ilike(pattern),
-                    Letter.sender.ilike(pattern),
-                    Letter.ocr_text.ilike(pattern),
-                    Letter.notes.ilike(pattern),
-                    Letter.llm_summary.ilike(pattern),
+                    Letter.title.ilike(pattern, escape=ESCAPE),
+                    Letter.sender.ilike(pattern, escape=ESCAPE),
+                    Letter.ocr_text.ilike(pattern, escape=ESCAPE),
+                    Letter.notes.ilike(pattern, escape=ESCAPE),
+                    Letter.llm_summary.ilike(pattern, escape=ESCAPE),
                 ),
             )
             .options(joinedload(Letter.tags), joinedload(Letter.files))

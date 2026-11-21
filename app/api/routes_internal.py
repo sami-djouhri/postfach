@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.config import settings
 from app.db import get_db
 from app.models import Account, Letter, LetterFile
+from app.suchmuster import ESCAPE, enthaelt
 
 router = APIRouter(prefix="/api/internal", tags=["internal"])
 
@@ -75,16 +76,16 @@ def search(
     _: None = Depends(_check_token),
     db: Session = Depends(get_db),
 ):
-    pattern = f"%{q}%"
+    pattern = enthaelt(q)
     stmt = (
         select(Letter)
         .where(
             or_(
-                Letter.title.ilike(pattern),
-                Letter.sender.ilike(pattern),
-                Letter.ocr_text.ilike(pattern),
-                Letter.notes.ilike(pattern),
-                Letter.llm_summary.ilike(pattern),
+                Letter.title.ilike(pattern, escape=ESCAPE),
+                Letter.sender.ilike(pattern, escape=ESCAPE),
+                Letter.ocr_text.ilike(pattern, escape=ESCAPE),
+                Letter.notes.ilike(pattern, escape=ESCAPE),
+                Letter.llm_summary.ilike(pattern, escape=ESCAPE),
             )
         )
         .options(joinedload(Letter.tags))
@@ -156,14 +157,14 @@ def list_letters(
     if tag_id is not None:
         stmt = stmt.where(Letter.tags.any(id=tag_id))
     if search:
-        pattern = f"%{search}%"
+        pattern = enthaelt(search)
         stmt = stmt.where(
             or_(
-                Letter.title.ilike(pattern),
-                Letter.sender.ilike(pattern),
-                Letter.ocr_text.ilike(pattern),
-                Letter.notes.ilike(pattern),
-                Letter.llm_summary.ilike(pattern),
+                Letter.title.ilike(pattern, escape=ESCAPE),
+                Letter.sender.ilike(pattern, escape=ESCAPE),
+                Letter.ocr_text.ilike(pattern, escape=ESCAPE),
+                Letter.notes.ilike(pattern, escape=ESCAPE),
+                Letter.llm_summary.ilike(pattern, escape=ESCAPE),
             )
         )
     stmt = stmt.offset(skip).limit(limit)

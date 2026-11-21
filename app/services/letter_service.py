@@ -9,6 +9,7 @@ from app.config import settings
 from app.domain import DomainError
 from app.models import Correspondent, Letter, LetterFile, Tag, letter_tag
 from app.services.search_service import fts_treffer
+from app.suchmuster import ESCAPE, enthaelt
 
 
 def jahr_ausdruck():
@@ -94,24 +95,24 @@ class LetterService:
             if ids is not None:
                 stmt = stmt.where(Letter.id.in_(ids))
             else:
-                pattern = f"%{q.strip()}%"
+                pattern = enthaelt(q.strip())
                 stmt = stmt.where(
                     or_(
-                        Letter.title.ilike(pattern),
-                        Letter.sender.ilike(pattern),
-                        Letter.ocr_text.ilike(pattern),
-                        Letter.notes.ilike(pattern),
-                        Letter.llm_summary.ilike(pattern),
+                        Letter.title.ilike(pattern, escape=ESCAPE),
+                        Letter.sender.ilike(pattern, escape=ESCAPE),
+                        Letter.ocr_text.ilike(pattern, escape=ESCAPE),
+                        Letter.notes.ilike(pattern, escape=ESCAPE),
+                        Letter.llm_summary.ilike(pattern, escape=ESCAPE),
                     )
                 )
         if search:
-            pattern = f"%{search}%"
+            pattern = enthaelt(search)
             stmt = stmt.where(
                 or_(
-                    Letter.title.ilike(pattern),
-                    Letter.sender.ilike(pattern),
-                    Letter.ocr_text.ilike(pattern),
-                    Letter.notes.ilike(pattern),
+                    Letter.title.ilike(pattern, escape=ESCAPE),
+                    Letter.sender.ilike(pattern, escape=ESCAPE),
+                    Letter.ocr_text.ilike(pattern, escape=ESCAPE),
+                    Letter.notes.ilike(pattern, escape=ESCAPE),
                 )
             )
         stmt = stmt.order_by(Letter.created_at.desc()).offset(skip).limit(limit)
