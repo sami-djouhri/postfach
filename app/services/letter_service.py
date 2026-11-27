@@ -1,6 +1,5 @@
 import os
 from datetime import datetime, timezone
-import shutil
 
 from sqlalchemy import or_, select, func
 from sqlalchemy.orm import Session, joinedload

@@ -51,7 +51,6 @@ services:
     environment:
       - DATABASE_URL=sqlite:////app/data/app.db
       - EMBEDDING_URL=http://embedding-service:8000
-      - STT_URL=http://ai-stt:5003
       - VISION_SCAN_TIMEOUT=30
       # LLM_BASE_URL und VISION_SCAN_URL stehen hier NICHT mehr. Sie trugen
       # bis 2026-09-06 die Adressen zweier Rechner dieses Hauses, und ein
@@ -62,6 +61,8 @@ services:
       #   LLM_BASE_URL      Analyse eines Briefes durch ein Sprachmodell
       #   VISION_SCAN_URL   Foto entzerren und zu PDF wandeln, sonst wird das
       #                     Original abgelegt
+      #   STT_URL           Sprachnotiz in Text wandeln (STT_CA_FILE fuer eine
+      #                     eigene CA); im Homelab setzt das docker-compose.homelab.yml
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:

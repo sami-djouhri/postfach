@@ -1,10 +1,11 @@
 /* ERZEUGT, NICHT VON HAND AENDERN.
  *
- * Quelle: saganta/packages/design-tokens/src/theme.css (Pruefsumme 1144865d60d3)
+ * Quelle: saganta/packages/design-tokens/src/theme.css (Pruefsumme 747882f5a7b4)
  * Werkzeug: saganta/scripts/nachtstudie-erzeugen.py --schreiben
  *
- * Die Nachtstudie fuer Dienste ausserhalb der Saganta-Suite. Nur dunkel
- * (Entscheid 2026-11-02). Jede Farbe gibt es zweimal: als Hexwert zum
+ * Das Warme Schwarz fuer Dienste ausserhalb der Saganta-Suite (der Dateiname
+ * nachtstudie.css ist aelter als der Satz). Nur dunkel (Entscheid
+ * 2026-11-02). Jede Farbe gibt es zweimal: als Hexwert zum
  * direkten Gebrauch und als `-rgb`-Dreier fuer Transparenz, also
  * `rgb(var(--saganta-akzent-rgb) / 0.12)`.
  *
@@ -12,57 +13,65 @@
  * Aenderung hier meldet der Waechter (`--pruefen`, taeglich) als Abweichung.
  */
 
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./jetbrains-mono-600.ttf') format('truetype');
+}
+
 :root {
   color-scheme: dark;
 
   /* Rollen, Werte aus --dunkel-* */
-  --saganta-surface: #16130f;
-  --saganta-surface-rgb: 22 19 15;
-  --saganta-surface-2: #1f1b15;
-  --saganta-surface-2-rgb: 31 27 21;
-  --saganta-text: #f3ede2;
-  --saganta-text-rgb: 243 237 226;
-  --saganta-muted: #a69b8a;
-  --saganta-muted-rgb: 166 155 138;
-  --saganta-border: #302920;
-  --saganta-border-rgb: 48 41 32;
-  --saganta-border-stark: #7c7264;
-  --saganta-border-stark-rgb: 124 114 100;
-  --saganta-focus: #dd9c3f;
-  --saganta-focus-rgb: 221 156 63;
-  --saganta-surface-hover: #292319;
-  --saganta-surface-hover-rgb: 41 35 25;
-  --saganta-surface-sunken: #110e0b;
-  --saganta-surface-sunken-rgb: 17 14 11;
-  --saganta-text-dim: #938979;
-  --saganta-text-dim-rgb: 147 137 121;
-  --saganta-erfolg: #b4cfc1;
-  --saganta-erfolg-rgb: 180 207 193;
-  --saganta-info: #96aabe;
-  --saganta-info-rgb: 150 170 190;
-  --saganta-warnung: #e3c766;
-  --saganta-warnung-rgb: 227 199 102;
-  --saganta-fehler: #e8908c;
-  --saganta-fehler-rgb: 232 144 140;
-  --saganta-akzent: #dd9c3f;
-  --saganta-akzent-rgb: 221 156 63;
-  --saganta-akzent-stark: #e5b467;
-  --saganta-akzent-stark-rgb: 229 180 103;
-  --saganta-kupfer: #c8884a;
-  --saganta-kupfer-rgb: 200 136 74;
+  --saganta-surface: #0a0907;
+  --saganta-surface-rgb: 10 9 7;
+  --saganta-surface-2: #16130f;
+  --saganta-surface-2-rgb: 22 19 15;
+  --saganta-text: #fbf3e6;
+  --saganta-text-rgb: 251 243 230;
+  --saganta-muted: #c2b6a2;
+  --saganta-muted-rgb: 194 182 162;
+  --saganta-border: #2a251d;
+  --saganta-border-rgb: 42 37 29;
+  --saganta-border-stark: #6e6350;
+  --saganta-border-stark-rgb: 110 99 80;
+  --saganta-focus: #ffb000;
+  --saganta-focus-rgb: 255 176 0;
+  --saganta-surface-hover: #201c16;
+  --saganta-surface-hover-rgb: 32 28 22;
+  --saganta-surface-sunken: #050403;
+  --saganta-surface-sunken-rgb: 5 4 3;
+  --saganta-text-dim: #948a78;
+  --saganta-text-dim-rgb: 148 138 120;
+  --saganta-erfolg: #8fe3a0;
+  --saganta-erfolg-rgb: 143 227 160;
+  --saganta-info: #c2b6a2;
+  --saganta-info-rgb: 194 182 162;
+  --saganta-warnung: #ffe14d;
+  --saganta-warnung-rgb: 255 225 77;
+  --saganta-fehler: #ff5a4e;
+  --saganta-fehler-rgb: 255 90 78;
+  --saganta-akzent: #ffb000;
+  --saganta-akzent-rgb: 255 176 0;
+  --saganta-akzent-stark: #ffe066;
+  --saganta-akzent-stark-rgb: 255 224 102;
+  --saganta-kupfer: #ff7a00;
+  --saganta-kupfer-rgb: 255 122 0;
 
   /* Messing-Skala: als FLAECHE gedacht, als Text nur `--saganta-akzent` */
-  --saganta-messing-50: #fbf4e7;
-  --saganta-messing-100: #f6e6c8;
-  --saganta-messing-200: #eecd97;
-  --saganta-messing-300: #e5b467;
-  --saganta-messing-400: #dd9c3f;
-  --saganta-messing-500: #cf8524;
-  --saganta-messing-600: #b06b18;
-  --saganta-messing-700: #8a5216;
-  --saganta-messing-800: #693f15;
-  --saganta-messing-900: #4d2f12;
-  --saganta-auf-messing: #1b1408;
+  --saganta-messing-50: #fff8e1;
+  --saganta-messing-100: #ffefb8;
+  --saganta-messing-200: #ffe58a;
+  --saganta-messing-300: #ffe066;
+  --saganta-messing-400: #ffc533;
+  --saganta-messing-500: #ffb000;
+  --saganta-messing-600: #ff9500;
+  --saganta-messing-700: #ff7a00;
+  --saganta-messing-800: #b35500;
+  --saganta-messing-900: #7a3a00;
+  --saganta-auf-messing: #140b00;
 
   /* Bewegung */
   --saganta-ease: cubic-bezier(0.4, 0, 0.2, 1);
@@ -70,6 +79,13 @@
   --saganta-motion-base: 200ms;
   --saganta-motion-slow: 320ms;
 
-  /* Schrift: die Dateien legt jeder Dienst selbst ab (Inter, OFL) */
+  /* Licht des Warmen Schwarz: Verlauf fuer Titel und Hauptknopf, Nebel als
+     Bildliste ueber der Grundfarbe (`background: var(--saganta-nebel), ...`) */
+  --saganta-verlauf: linear-gradient(90deg, #ffe066, #ffb000 45%, #ff7a00);
+  --saganta-nebel: radial-gradient(ellipse 80% 40% at 50% -8%, rgb(255 176 0 / 0.15), transparent 70%), radial-gradient(ellipse 70% 35% at 50% 110%, rgb(255 122 0 / 0.1), transparent 70%), radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.45));
+
+  /* Schrift: Inter legt jeder Dienst selbst ab (OFL); JetBrains Mono 600
+     schreibt dieses Werkzeug neben die Kopie (siehe @font-face oben) */
   --saganta-schrift: 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif;
+  --saganta-schrift-mono: 'JetBrains Mono', ui-monospace, monospace;
 }

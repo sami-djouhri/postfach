@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import ssl
 import uuid
 from datetime import date, datetime, timezone
 
@@ -849,6 +850,16 @@ _AUDIO_EXTENSION_MAP = {
 }
 
 
+
+def _stt_verify() -> ssl.SSLContext | bool:
+    """Systemspeicher plus STT_CA_FILE, falls gesetzt."""
+    if not settings.STT_CA_FILE:
+        return True
+    ctx = ssl.create_default_context()
+    ctx.load_verify_locations(settings.STT_CA_FILE)
+    return ctx
+
+
 @router.post("/voice-memo", response_model=LetterOut, status_code=201)
 def voice_memo(
     background: BackgroundTasks,
@@ -878,7 +889,7 @@ def voice_memo(
 
     # Transcribe via ai-stt
     try:
-        with httpx.Client(timeout=120.0) as client:
+        with httpx.Client(timeout=120.0, verify=_stt_verify()) as client:
             files = {"file": (file.filename or "memo.webm", content, file.content_type)}
             data = {"language": language} if language and language != "auto" else {}
             r = client.post(f"{settings.STT_URL.rstrip('/')}/api/stt", files=files, data=data)

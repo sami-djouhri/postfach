@@ -9,7 +9,10 @@ class Settings(BaseSettings):
     FILES_DIR: str = "/app/data/files"
     SESSION_EXPIRE_HOURS: int = 72
     KG_INTERNAL_TOKEN: str = ""
-    STT_URL: str = ""  # ai-stt /api/stt, z.B. http://host.docker.internal:5003
+    STT_URL: str = ""  # Basisadresse des STT-Dienstes, /api/stt wird angehaengt
+    # Zusaetzliche Wurzel fuer einen STT-Dienst hinter einer eigenen CA. Sie
+    # ergaenzt den Systemspeicher, ersetzt ihn nicht. Leer: nur Systemspeicher.
+    STT_CA_FILE: str = ""
     # Wenn gesetzt: Bild-Uploads werden vor dem Ablegen entzerrt und zu PDF
     # gewandelt. Erwartet einen Dienst mit /scan, z.B. eine eigene Instanz auf
     # einem Rechner mit Beschleuniger. Leer lassen heisst: das Original-Foto

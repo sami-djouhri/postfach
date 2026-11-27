@@ -8,7 +8,7 @@
 
 Paper mail, digitised: scan a letter, run OCR over it, file it under a category,
 find it again, export it as PDF. Part of the
-[Saganta Suite](https://github.com/sami-djouhri/saganta-suite), usable on its
+[Saganta Suite](https://github.com/sami-djouhri/saganta), usable on its
 own. All user-facing text is German.
 
 ## Why the whole folder is encrypted and not single columns

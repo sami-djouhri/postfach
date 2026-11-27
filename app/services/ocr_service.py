@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.domain import DomainError
-from app.models import Letter, LetterFile
+from app.models import Letter
 from app.services import event_publisher
 
 logger = logging.getLogger(__name__)

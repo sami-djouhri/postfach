@@ -1012,3 +1012,18 @@ input[type='datetime-local'] {
   color-scheme: dark;
 }
 .page-header { flex-wrap: wrap; }
+
+/* Warmes Schwarz (seit 2026-11-25, wie alle Saganta-Apps): Nebel hinter dem
+   Inhalt und Seitentitel in Mono mit Verlauf. Werte aus nachtstudie.css. */
+body {
+  background-image: var(--saganta-nebel);
+  background-attachment: fixed;
+}
+h1 {
+  font-family: var(--saganta-schrift-mono);
+  background-image: var(--saganta-verlauf);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 10px rgb(255 160 0 / 0.35));
+}

@@ -1,7 +1,7 @@
 /* ERZEUGT, NICHT VON HAND AENDERN.
  *
  * Quellen: saganta/packages/ui/src/apps.ts, packages/ui/src/components/Icon.svelte,
- * packages/design-tokens/src/theme.css (Pruefsumme 8a0640a930da)
+ * packages/design-tokens/src/theme.css (Pruefsumme c9ec432d27ed)
  * Werkzeug: saganta/scripts/kopf-erzeugen.py --schreiben
  *
  * Der Saganta-Kopf fuer Dienste ausserhalb der SvelteKit-Suite, Gegenstueck
@@ -240,8 +240,8 @@
       top: 0;
       z-index: 30;
       font-family: var(--saganta-schrift, 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif);
-      color: #f3ede2;
-      background: rgb(22 19 15 / 0.8);
+      color: #fbf3e6;
+      background: rgb(10 9 7 / 0.8);
       -webkit-backdrop-filter: blur(12px);
       backdrop-filter: blur(12px);
     }
@@ -259,31 +259,31 @@
       color: inherit; text-decoration: none; border-radius: 6px;
     }
     .wort { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
-    .trenner { color: #a69b8a; }
-    .sinnbild { color: #dd9c3f; display: inline-flex; }
+    .trenner { color: #c2b6a2; }
+    .sinnbild { color: #ffb000; display: inline-flex; }
     .app { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wechsler { position: relative; }
     .knopf {
       display: grid; place-items: center; width: 44px; height: 44px;
-      background: none; border: 0; padding: 0; color: #a69b8a; cursor: pointer;
+      background: none; border: 0; padding: 0; color: #c2b6a2; cursor: pointer;
     }
-    .knopf:hover { color: #f3ede2; }
+    .knopf:hover { color: #fbf3e6; }
     .knopf > span {
       display: grid; place-items: center; width: 32px; height: 32px;
-      border: 1px solid #7c7264; border-radius: 6px;
+      border: 1px solid #6e6350; border-radius: 6px;
     }
-    .knopf:hover > span { background: #1f1b15; }
-    a:focus-visible, button:focus-visible { outline: 2px solid #dd9c3f; outline-offset: 2px; }
+    .knopf:hover > span { background: #16130f; }
+    a:focus-visible, button:focus-visible { outline: 2px solid #ffb000; outline-offset: 2px; }
     .tafel {
       position: absolute; left: 0; top: 100%; margin-top: 6px; z-index: 40;
       width: 18rem; max-width: calc(100vw - 24px);
-      border: 1px solid #302920; border-radius: 12px; overflow: hidden;
-      background: #1f1b15; box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+      border: 1px solid #2a251d; border-radius: 12px; overflow: hidden;
+      background: #16130f; box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
     }
     .tafel[hidden] { display: none; }
     .tafel-kopf {
-      padding: 8px 12px; border-bottom: 1px solid #302920;
-      font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #a69b8a;
+      padding: 8px 12px; border-bottom: 1px solid #2a251d;
+      font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #c2b6a2;
     }
     .raster {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 8px;
@@ -292,11 +292,11 @@
     .raster a {
       display: flex; flex-direction: column; align-items: center; gap: 6px;
       padding: 12px 8px; border-radius: 8px; text-align: center; text-decoration: none;
-      color: #a69b8a; font-size: 12px; line-height: 1.2;
+      color: #c2b6a2; font-size: 12px; line-height: 1.2;
     }
-    .raster a:hover { background: #292319; color: #f3ede2; }
-    .raster a[aria-current="page"] { background: rgb(221 156 63 / 0.1); color: #dd9c3f; }
-    .band { height: 2px; color: #7c7264; }
+    .raster a:hover { background: #201c16; color: #fbf3e6; }
+    .raster a[aria-current="page"] { background: rgb(255 176 0 / 0.1); color: #ffb000; }
+    .band { height: 2px; color: #6e6350; }
     @media (max-width: 639px) {
       .wort, .trenner { display: none; }
     }

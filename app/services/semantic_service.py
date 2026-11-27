@@ -9,11 +9,9 @@ gespeichert. Search: User-Query embedden, kNN über vec0() MATCH.
 """
 from __future__ import annotations
 
-import json
 import logging
 import os
 import struct
-from typing import Iterable, Optional
 
 import httpx
 from sqlalchemy import text
